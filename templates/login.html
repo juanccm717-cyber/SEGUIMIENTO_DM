@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ProTocol DMHTA | Login</title>
+</head>
+<body>
+    <h1>ProTocol DMHTA</h1>
+    <h2>Ingreso al Sistema</h2>
+    <form method="post">
+        <label>Usuario:</label>
+        <input type="text" name="username" required><br>
+        <label>Contraseña:</label>
+        <input type="password" name="password" required><br>
+        <button type="submit">Ingresar</button>
+    </form>
+    {% if error %}
+    <p style="color:red;">{{ error }}</p>
+    {% endif %}
+</body>
+</html>
