@@ -1,7 +1,12 @@
 import os
 import sys
 import traceback
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request
+from dotenv import load_dotenv
+
+# === Cargar variables de entorno (funciona en local y Vercel) ===
+# En Vercel, load_dotenv() no hará nada si no hay .env, pero las vars ya están en el entorno
+load_dotenv()
 
 # === Manejo de errores para ver logs en Vercel ===
 def handle_exception(exc_type, exc_value, exc_traceback):
@@ -13,17 +18,20 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 sys.excepthook = handle_exception
 
-# === Ruta absoluta al directorio raíz del proyecto ===
+# === Ruta absoluta al directorio raíz ===
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# === Inicializa Flask con la carpeta de templates correcta ===
-app = Flask(__name__, template_folder=os.path.join(project_root, 'templates'))
+# === Inicializar Flask con templates en la ubicación correcta ===
+app = Flask(__name__, template_folder=os.path.join(project, 'templates'))
 
-# === Configuración de Supabase (PON TUS DATOS REALES AQUÍ) ===
-SUPABASE_URL = "https://efterwiekhvmfsegmfu.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmbHRlcndpZWtodm1mc2VnbWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzNjIwMzksImV4cCI6MjA3OTkzODAzOX0.a6ZDMToIMV26z_1JErX1NXbYUmafLN-RZ37plU9TmDs"
+# === Obtener credenciales de Supabase ===
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
 
-# === Conexión a Supabase ===
+if not SUPABASE_URL or not SUPABASE_KEY:
+    print("⚠️ ERROR: Falta SUPABASE_URL o SUPABASE_ANON_KEY en el entorno.", file=sys.stderr)
+    sys.exit(1)
+
 from supabase import create_client
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -33,7 +41,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 def login():
     return render_template('login.html')
 
-@app.route('/menu', methods=['GET', 'POST'])
+@app.route('/menu')
 def menu():
     return render_template('menu.html', usuario="Dr. Juan")
 
@@ -56,10 +64,9 @@ def guardar():
             'email': request.form.get('email') or None
         }
 
-        # Guardar en Supabase
         response = supabase.table('pacientes').insert(data).execute()
 
-        if response.data:
+        if response.
             return f"""
             <h2 style="font-family: Arial, sans-serif; color: #2e7d32;">✅ Paciente registrado con éxito</h2>
             <p><strong>Nombre:</strong> {data['nombre']}<br><strong>DNI:</strong> {data['dni']}</p>
@@ -69,18 +76,24 @@ def guardar():
             return "<h2 style='color: red;'>❌ Error: No se pudo guardar en Supabase.</h2><a href='/registrar_paciente'>Reintentar</a>"
 
     except Exception as e:
-        return f"<h3 style='color: red;'>⚠️ Error al procesar:</h3><pre>{traceback.format_exc()}</pre>"
+        return f"<h3 style='color: red;'>⚠️ Excepción:</h3><pre>{traceback.format_exc()}</pre>"
 
-# === Handler requerido por Vercel ===
+# === Handler para Vercel ===
 def handler(event, context):
     with app.test_request_context(
         path=event.get('path', '/'),
         method=event.get('httpMethod', 'GET'),
         headers=event.get('headers', {})
     ):
-        response = app.full_dispatch_request()
-        return {
-            'statusCode': response.status_code,
-            'headers': dict(response.headers),
-            'body': response.get_data(as_text=True)
-        }
+        try:
+            response = app.full_dispatch_request()
+            return {
+                'statusCode': response.status_code,
+                'headers': dict(response.headers),
+                'body': response.get_data(as_text=True)
+            }
+        except Exception as e:
+            return {
+                'statusCode': 500,
+                'body': f"Error interno:\n{traceback.format_exc()}"
+            }
