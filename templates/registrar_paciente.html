@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head><title>Registrar Paciente</title></head>
+<body>
+  <h2>➕ Registrar Nuevo Paciente</h2>
+  <form method="POST" action="/registrar_paciente">
+    <label>Nombre: <input name="nombre" required></label><br><br>
+    <label>DNI: <input name="dni" required></label><br><br>
+    <label>Fecha Nac: <input name="fecha_nacimiento" type="date" required></label><br><br>
+    <label>Diabetes: 
+      <select name="diagnostico_dm" required>
+        <option value="si">Sí</option>
+        <option value="no">No</option>
+      </select>
+    </label><br><br>
+    <label>Tipo DM: 
+      <select name="tipo_dm">
+        <option value="">N/A</option>
+        <option value="1">Tipo 1</option>
+        <option value="2">Tipo 2</option>
+      </select>
+    </label><br><br>
+    <label>HTA: 
+      <select name="diagnostico_hta" required>
+        <option value="si">Sí</option>
+        <option value="no">No</option>
+      </select>
+    </label><br><br>
+    <label>Fecha Diagnóstico: <input name="fecha_diagnostico" type="date" required></label><br><br>
+    <label>Teléfono: <input name="telefono"></label><br><br>
+    <button type="submit">Guardar</button>
+  </form>
+  <br><a href="/menu">← Volver al Menú</a>
+</body>
+</html>
