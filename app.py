@@ -1,17 +1,37 @@
-from flask import Flask, render_template, request
-import os
+from flask import Flask, render_template, request, redirect, url_for, session
 
-# App principal (DEBE llamarse 'app')
-app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), 'templates'))
+app = Flask(__name__)
+app.secret_key = "tu_clave_secreta_aqui"  # Cambia esto en producción
+
+# Usuarios simulados (más adelante los conectarás a Supabase)
+USUARIOS = {
+    "admin": "admin123",
+    "medico": "medico123",
+    "enfermeria": "enfer123"
+}
 
 @app.route('/')
-def home():
-    return "<h1>✅ App Flask funcionando en Vercel</h1>"
+def login():
+    return render_template('login.html')
 
-@app.route('/test')
-def test():
-    return "Funciona sin errores."
+@app.route('/login', methods=['POST'])
+def do_login():
+    usuario = request.form['usuario']
+    clave = request.form['clave']
+    
+    if usuario in USUARIOS and USUARIOS[usuario] == clave:
+        session['usuario'] = usuario
+        return redirect('/menu')
+    else:
+        return render_template('login.html', error="Usuario o contraseña incorrectos")
 
-# Esta variable es obligatoria
-# Vercel busca una variable global llamada 'app' que sea WSGI
-# Flask ya es WSGI-compatible por defecto
+@app.route('/menu')
+def menu():
+    if 'usuario' not in session:
+        return redirect('/')
+    return render_template('menu.html', usuario=session['usuario'])
+
+@app.route('/logout')
+def logout():
+    session.pop('usuario', None)
+    return redirect('/')
