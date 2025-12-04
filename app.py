@@ -5,7 +5,7 @@ from supabase import create_client
 
 # --- Configuración de Flask ---
 app = Flask(__name__, template_folder='templates')
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "clave_segura_temporal")
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "clave_segura_dm_hta_2025")
 
 # --- Conexión a Supabase (usa SERVICE_ROLE_KEY) ---
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
@@ -65,26 +65,31 @@ def guardar_paciente():
     try:
         existing = supabase.table('pacientes').select('dni').eq('dni', dni).execute()
         if existing.data:
-            flash('⚠️ Paciente ya registrado con este DNI.', 'warning')
+            flash(f'⚠️ Paciente ya registrado con este DNI. Use el módulo de seguimiento.', 'warning')
             return render_template('registrar_paciente.html', dni=dni, nombre=nombre)
         
         data = {
             'dni': dni,
             'nombres_apellidos': nombre,
-            'diabetes_mellitus': request.form['diagnostico_dm'] == 'si',
-            'hipertension_arterial': request.form['diagnostico_hta'] == 'si',
             'fecha_nacimiento': request.form['fecha_nacimiento'],
+            'diagnostico_dm': request.form['diagnostico_dm'] == 'si',
+            'tipo_dm': request.form.get('tipo_dm') or None,
+            'diagnostico_hta': request.form['diagnostico_hta'] == 'si',
             'fecha_diagnostico': request.form['fecha_diagnostico'],
-            'telefono': request.form.get('telefono'),
-            'tipo_financiamiento': request.form.get('tipo_financiamiento', 'SIS')
+            'telefono': request.form.get('telefono') or None,
+            'email': request.form.get('email') or None
         }
-        supabase.table('pacientes').insert(data).execute()
-        flash(f'✅ Paciente {nombre} registrado con éxito.', 'success')
-        return redirect('/menu')
-    
+
+        response = supabase.table('pacientes').insert(data).execute()
+
+        if response:
+            flash(f'✅ Paciente {nombre} registrado con éxito.', 'success')
+            return redirect('/menu')
+        else:
+            flash('❌ Error al guardar en Supabase.', 'danger')
+
     except Exception as e:
-        flash(f'⚠️ Error: {str(e)}', 'danger')
-        return render_template('registrar_paciente.html')
+        flash(f'⚠️ Error interno: {str(e)}', 'danger')
 
 @app.route('/logout')
 def logout():
