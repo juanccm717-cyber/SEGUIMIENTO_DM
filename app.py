@@ -62,5 +62,5 @@ def test_conexion():
     except Exception as e:
         return f'<!DOCTYPE html><html><body><h1>Error</h1><pre>{e}</pre></body></html>'
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# if __name__ == '__main__':
+#     app.run(debug=True)
