@@ -8,7 +8,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "clave_segura_temporal")
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 
-# Conexión a Supabase con SERVICE_ROLE_KEY
+# Conexión a Supabase
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
 SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
 if not SUPABASE_URL or not SUPABASE_KEY:
@@ -26,12 +26,12 @@ def login():
     username = request.form['usuario']
     password = request.form['clave']
     try:
-        user = supabase.table('usuarios').select('*').eq('username', username).execute()
+        user = supabase.table('usuarios').select('*').eq('email', username).execute()
         if user.data and len(user.data) > 0:
             db_user = user.data[0]
             if bcrypt.checkpw(password.encode('utf-8'), db_user['password_hash'].encode('utf-8')):
-                session['usuario'] = db_user['username']
-                session['role'] = db_user['role']
+                session['usuario'] = db_user['email']
+                session['role'] = db_user['rol']
                 return redirect('/menu')
     except Exception as e:
         print(f"Error en login: {e}")
