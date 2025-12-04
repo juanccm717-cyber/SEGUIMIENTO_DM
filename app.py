@@ -49,5 +49,13 @@ def logout():
     session.clear()
     return redirect('/')
 
+@app.route('/test_conexion')
+def test_conexion():
+    try:
+        res = supabase.table('usuarios').select('email', 'rol').execute()
+        return f"<h1>Conexión OK</h1><pre>{res.data}</pre>"
+    except Exception as e:
+        return f"<h1>Error</h1><pre>{e}</pre>"
+
 if __name__ == '__main__':
     app.run(debug=True)
