@@ -2,12 +2,11 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Menú Principal</title>
+    <title>Menú</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f5f7fa; }
+        body { font-family: Arial; margin: 0; background: #f5f7fa; }
         .header { background: #1976d2; color: white; padding: 15px 20px; }
         .container { padding: 20px; }
-        .user { font-size: 0.9em; opacity: 0.9; }
         .menu { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); text-align: center; text-decoration: none; color: #1976d2; }
         .card:hover { background: #e3f2fd; }
@@ -18,7 +17,7 @@
 <body>
     <div class="header">
         <h2>ProTocol DMHTA</h2>
-        <div class="user">Bienvenido, {{ usuario }}</div>
+        <div>Bienvenido, {{ usuario }}</div>
     </div>
     <div class="container">
         <div class="menu">
