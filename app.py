@@ -43,17 +43,48 @@ def registrar():
 def guardar_paciente():
     if 'usuario' not in session:
         return redirect('/')
-    # Por ahora, solo muestra los datos
-    data = {
-        'nombre': request.form['nombre'],
-        'dni': request.form['dni'],
-        'diagnostico_dm': request.form['diagnostico_dm'],
-        'diagnostico_hta': request.form['diagnostico_hta']
-    }
-    return f"""
-    <h2>✅ Paciente {data['nombre']} registrado</h2>
-    <a href="/menu">← Volver al Menú</a>
-    """
+    
+    dni = request.form['dni']
+    nombre = request.form['nombre']
+    
+    try:
+        # 🔍 Verificar si el DNI ya existe en Supabase
+        existing = supabase.table('pacientes').select('dni').eq('dni', dni).execute()
+        if existing.data:
+            # Paciente ya existe → mostrar error
+            return render_template('registrar_paciente.html', 
+                                   error="⚠️ Paciente ya registrado con este DNI. Use el módulo de seguimiento.")
+        
+        # 🆕 Registrar nuevo paciente
+        data = {
+            'dni': dni,
+            'nombre': nombre,
+            'fecha_nacimiento': request.form['fecha_nacimiento'],
+            'diagnostico_dm': request.form['diagnostico_dm'] == 'si',
+            'tipo_dm': request.form.get('tipo_dm') or None,
+            'diagnostico_hta': request.form['diagnostico_hta'] == 'si',
+            'fecha_diagnostico': request.form['fecha_diagnostico'],
+            'telefono': request.form.get('telefono') or None,
+            'email': request.form.get('email') or None
+        }
+
+        response = supabase.table('pacientes').insert(data).execute()
+
+        if response:
+            return f"""
+            <h2 style="font-family: Arial, sans-serif; color: #2e7d32;">✅ Paciente registrado con éxito</h2>
+            <p><strong>DNI:</strong> {data['dni']}<br>
+               <strong>Nombre:</strong> {data['nombre']}</p>
+            <a href="/menu" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: #1976d2;
+               color: white; text-decoration: none; border-radius: 4px;">← Volver al Menú</a>
+            """
+        else:
+            return render_template('registrar_paciente.html', 
+                                   error="❌ Error: No se pudo guardar en Supabase.")
+
+    except Exception as e:
+        return render_template('registrar_paciente.html', 
+                               error=f"⚠️ Error interno: {str(e)}")
 
 @app.route('/logout')
 def logout():
