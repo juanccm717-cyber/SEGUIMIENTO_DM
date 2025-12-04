@@ -22,31 +22,66 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 def login():
     return render_template('login.html')
 
-@app.route('/login', methods=['POST'])
-def do_login():
-    username = request.form['usuario']
-    password = request.form['clave']
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # --- PASO 0: Limpiar sesión al visitar la página de login ---
+    if request.method == 'GET':
+        return render_template('login.html')
+    # --- PASO 1: Recoger datos del formulario ---
+    username = request.form.get('username')
+    password = request.form.get('password')
+    fingerprint = request.form.get('fingerprint')
+    user_agent = request.headers.get('User-Agent')
+    if not all([username, password, fingerprint]):
+        flash('Faltan datos para el inicio de sesión. Asegúrate de que JavaScript esté habilitado.', 'warning')
+        return redirect(url_for('login'))
     
+    # --- NUEVO: Usar Supabase en lugar de engine para el login ---
     try:
         # Buscar usuario en Supabase
         user = supabase.table('usuarios').select('*').eq('username', username).execute()
         if user.data and len(user.data) > 0:
             db_user = user.data[0]
             if bcrypt.checkpw(password.encode('utf-8'), db_user['password_hash'].encode('utf-8')):
-                session['usuario'] = db_user['username']
-                session['role'] = db_user['rol']
-                return redirect('/menu')
+                user_role_cleaned = db_user['role'].strip().lower()
+                # --- PASO 3: Lógica de roles ---
+                if user_role_cleaned == 'administrador':
+                    session['user_id'] = db_user['id']
+                    session['username'] = db_user['username']
+                    session['role'] = db_user['role']
+                    return redirect(url_for('menu'))
+                else: 
+                    # --- Para otros roles, usamos la lógica de huella digital ---
+                    device = supabase.table('dispositivos_autorizados').select('id').eq('usuario_id', db_user['id']).eq('huella_dispositivo', fingerprint).execute()
+                    if device.data:
+                        session['user_id'] = db_user['id']
+                        session['username'] = db_user['username']
+                        session['role'] = db_user['role']
+                        return redirect(url_for('menu'))
+                    else:
+                        # --- Crear solicitud de acceso ---
+                        existing_request = supabase.table('solicitudes_acceso').select('id').eq('usuario_id', db_user['id']).eq('huella_dispositivo', fingerprint).eq('estado', 'pendiente').execute()
+                        if not existing_request.data:
+                            supabase.table('solicitudes_acceso').insert({
+                                'usuario_id': db_user['id'],
+                                'huella_dispositivo': fingerprint,
+                                'user_agent_info': user_agent
+                            }).execute()
+                        flash('Dispositivo no reconocido. Se ha enviado una solicitud de acceso al administrador para su aprobación.', 'info')
+                        return redirect(url_for('login'))
+        else:
+            flash('Nombre de usuario o contraseña incorrectos.', 'danger')
+            return redirect(url_for('login'))
     except Exception as e:
-        print(f"Error en login: {e}")
-    
-    flash('Usuario o contraseña incorrectos.', 'danger')
-    return render_template('login.html')
+        print(f"Error catastrófico durante el login: {e}")
+        flash('Ocurrió un error inesperado en el servidor. Contacte al soporte.', 'danger')
+        return redirect(url_for('login'))
 
 @app.route('/menu')
 def menu():
-    if 'usuario' not in session:
-        return redirect('/')
-    return render_template('menu.html', usuario=session['usuario'])
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('menu.html')
 
 @app.route('/registrar_paciente')
 def registrar():
