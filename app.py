@@ -52,10 +52,15 @@ def logout():
 @app.route('/test_conexion')
 def test_conexion():
     try:
-        res = supabase.table('usuarios').select('email', 'rol').execute()
-        return f"<h1>Conexión OK</h1><pre>{res.data}</pre>"
+        res = supabase.table('usuarios').select('email', 'rol', 'password_hash').execute()
+        html = ['<!DOCTYPE html><html><body><h1>Usuarios en Supabase</h1><table border=1>']
+        html.append('<tr><th>email</th><th>rol</th><th>hash (primeros 20 carácteres)</th></tr>')
+        for u in res.data:
+            html.append(f'<tr><td>{u["email"]}</td><td>{u["rol"]}</td><td>{u["password_hash"][:20]}...</td></tr>')
+        html.append('</table></body></html>')
+        return ''.join(html)
     except Exception as e:
-        return f"<h1>Error</h1><pre>{e}</pre>"
+        return f'<!DOCTYPE html><html><body><h1>Error</h1><pre>{e}</pre></body></html>'
 
 if __name__ == '__main__':
     app.run(debug=True)
