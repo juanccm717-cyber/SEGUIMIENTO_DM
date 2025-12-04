@@ -5,13 +5,11 @@ from supabase import create_client
 
 # --- Configuración de Flask ---
 app = Flask(__name__, template_folder='templates')
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "prosecretkey_dm_hta_2025_seguro")
-app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "clave_segura_dm_hta_2025")
 
-# --- Conexión a Supabase ---
+# --- Conexión a Supabase (USA SERVICE_ROLE_KEY) ---
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
-SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')  # ⚠️ ¡Clave de servicio!
+SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')  # ¡Clave de servicio!
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY")
@@ -19,6 +17,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- Rutas ---
+
 @app.route('/')
 def login():
     return render_template('login.html')
@@ -28,14 +27,16 @@ def do_login():
     username = request.form['usuario']
     password = request.form['clave']
     
-    # Buscar usuario en Supabase
-    user = supabase.table('usuarios').select('*').eq('username', username).execute()
-    if user.data and len(user.data) > 0:
-        db_user = user.data[0]
-        if bcrypt.checkpw(password.encode('utf-8'), db_user['password_hash'].encode('utf-8')):
-            session['usuario'] = db_user['username']
-            session['role'] = db_user['role']
-            return redirect('/menu')
+    try:
+        user = supabase.table('usuarios').select('*').eq('username', username).execute()
+        if user.data and len(user.data) > 0:
+            db_user = user.data[0]
+            if bcrypt.checkpw(password.encode('utf-8'), db_user['password_hash'].encode('utf-8')):
+                session['usuario'] = db_user['username']
+                session['role'] = db_user['rol']
+                return redirect('/menu')
+    except Exception as e:
+        print(f"Error en login: {e}")
     
     flash('Usuario o contraseña incorrectos.', 'danger')
     return render_template('login.html')
@@ -57,34 +58,31 @@ def guardar_paciente():
     if 'usuario' not in session:
         return redirect('/')
     
-    dni = request.form['dni'].strip()
-    nombre = request.form['nombre'].strip()
+    dni = request.form['dni']
+    nombre = request.form['nombre']
     
-    # Verificar si el DNI ya existe
-    existing = supabase.table('pacientes').select('dni').eq('dni', dni).execute()
-    if existing.data:
-        flash(f'⚠️ Paciente ya registrado con este DNI. Use el módulo de seguimiento.', 'warning')
-        return render_template('registrar_paciente.html', dni=dni, nombre=nombre)
-    
-    # Registrar nuevo paciente
-    data = {
-        'dni': dni,
-        'nombre': nombre,
-        'fecha_nacimiento': request.form['fecha_nacimiento'],
-        'diagnostico_dm': request.form['diagnostico_dm'] == 'si',
-        'tipo_dm': request.form.get('tipo_dm') or None,
-        'diagnostico_hta': request.form['diagnostico_hta'] == 'si',
-        'fecha_diagnostico': request.form['fecha_diagnostico'],
-        'telefono': request.form.get('telefono') or None,
-        'email': request.form.get('email') or None
-    }
-
-    response = supabase.table('pacientes').insert(data).execute()
-    if response.data:
+    try:
+        existing = supabase.table('pacientes').select('dni').eq('dni', dni).execute()
+        if existing.data:
+            flash('⚠️ Paciente ya registrado con este DNI.', 'warning')
+            return render_template('registrar_paciente.html', dni=dni, nombre=nombre)
+        
+        data = {
+            'dni': dni,
+            'nombres_apellidos': nombre,
+            'diabetes_mellitus': request.form.get('diagnostico_dm') == 'si',
+            'hipertension_arterial': request.form.get('diagnostico_hta') == 'si',
+            'fecha_nacimiento': request.form['fecha_nacimiento'],
+            'fecha_diagnostico': request.form['fecha_diagnostico'],
+            'telefono': request.form.get('telefono'),
+            'tipo_financiamiento': request.form.get('tipo_financiamiento', 'SIS')
+        }
+        supabase.table('pacientes').insert(data).execute()
         flash(f'✅ Paciente {nombre} registrado con éxito.', 'success')
         return redirect('/menu')
-    else:
-        flash('❌ Error al guardar en Supabase.', 'danger')
+    
+    except Exception as e:
+        flash(f'⚠️ Error: {str(e)}', 'danger')
         return render_template('registrar_paciente.html')
 
 @app.route('/logout')

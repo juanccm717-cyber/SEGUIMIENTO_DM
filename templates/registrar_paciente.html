@@ -2,46 +2,43 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Registrar Paciente - ProTocol DMHTA</title>
+    <title>Registrar Paciente</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        body { font-family: Arial; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .form { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 400px; }
         .form h2 { margin-top: 0; color: #1976d2; }
-        .form input, .form select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .form input, .form select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
         .form button { width: 100%; padding: 10px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .form button:hover { background: #1565c0; }
         .back { display: block; text-align: center; margin-top: 20px; color: #7f8c8d; text-decoration: none; }
-        .back:hover { text-decoration: underline; }
-        .error { color: #d32f2f; font-size: 0.9em; background: #ffebee; padding: 8px; border-radius: 4px; margin-top: -8px; }
+        .error { color: red; font-size: 0.9em; background: #ffebee; padding: 8px; border-radius: 4px; margin-top: -8px; }
     </style>
 </head>
 <body>
     <div class="form">
         <h2>➕ Registrar Nuevo Paciente</h2>
-        {% if error %}
-            <div class="error">{{ error }}</div>
-        {% endif %}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="error">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
         <form method="POST" action="/registrar_paciente">
-            <input type="text" name="dni" placeholder="DNI / Documento (único)" required>
+            <input type="text" name="dni" placeholder="DNI / Documento" required>
             <input type="text" name="nombre" placeholder="Nombre Completo" required>
             <input type="date" name="fecha_nacimiento" placeholder="Fecha de Nacimiento" required>
             <select name="diagnostico_dm" required>
-                <option value="">¿Diagnóstico de Diabetes Mellitus?</option>
-                <option value="si">Sí</option>
-                <option value="no">No</option>
-            </select>
-            <select name="tipo_dm">
-                <option value="">Tipo de Diabetes (si aplica)</option>
-                <option value="1">Tipo 1</option>
-                <option value="2">Tipo 2</option>
-                <option value="gestacional">Gestacional</option>
+                <option value="si">Diabetes Mellitus: Sí</option>
+                <option value="no">Diabetes Mellitus: No</option>
             </select>
             <select name="diagnostico_hta" required>
-                <option value="">¿Diagnóstico de Hipertensión Arterial?</option>
-                <option value="si">Sí</option>
-                <option value="no">No</option>
+                <option value="si">Hipertensión Arterial: Sí</option>
+                <option value="no">Hipertensión Arterial: No</option>
             </select>
             <input type="date" name="fecha_diagnostico" placeholder="Fecha de Diagnóstico" required>
+            <select name="tipo_financiamiento">
+                <option value="SIS">SIS</option>
+                <option value="EsSalud">EsSalud</option>
+                <option value="Pagante">Pagante</option>
+            </select>
             <input type="text" name="telefono" placeholder="Teléfono de Contacto">
             <button type="submit">Guardar Paciente</button>
         </form>
