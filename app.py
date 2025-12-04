@@ -5,9 +5,9 @@ from supabase import create_client
 
 # --- Configuración de Flask ---
 app = Flask(__name__, template_folder='templates')
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "clave_segura_dm_hta_2025")
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "clave_segura_temporal")
 
-# --- Conexión a Supabase (USA SERVICE_ROLE_KEY) ---
+# --- Conexión a Supabase (usa SERVICE_ROLE_KEY) ---
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
 SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')  # ¡Clave de servicio!
 
@@ -28,6 +28,7 @@ def do_login():
     password = request.form['clave']
     
     try:
+        # Buscar usuario en Supabase
         user = supabase.table('usuarios').select('*').eq('username', username).execute()
         if user.data and len(user.data) > 0:
             db_user = user.data[0]
@@ -70,8 +71,8 @@ def guardar_paciente():
         data = {
             'dni': dni,
             'nombres_apellidos': nombre,
-            'diabetes_mellitus': request.form.get('diagnostico_dm') == 'si',
-            'hipertension_arterial': request.form.get('diagnostico_hta') == 'si',
+            'diabetes_mellitus': request.form['diagnostico_dm'] == 'si',
+            'hipertension_arterial': request.form['diagnostico_hta'] == 'si',
             'fecha_nacimiento': request.form['fecha_nacimiento'],
             'fecha_diagnostico': request.form['fecha_diagnostico'],
             'telefono': request.form.get('telefono'),
