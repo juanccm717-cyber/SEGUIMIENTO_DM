@@ -58,6 +58,6 @@ def test_conexion():
     except Exception as e:
         return f'<!DOCTYPE html><html><body><h1>Error</h1><pre>{e}</pre></body></html>'
 
-
+# (al final de index.py)
 def handler(environ, start_response):
     return app(environ, start_response)
